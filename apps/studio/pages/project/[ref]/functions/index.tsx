@@ -36,6 +36,7 @@ import {
 } from 'ui-patterns/PageHeader'
 import { PageSection, PageSectionContent } from 'ui-patterns/PageSection'
 import { GenericSkeletonLoader } from 'ui-patterns/ShimmeringLoader'
+import { Admonition } from 'ui-patterns'
 
 const EdgeFunctionsPage: NextPageWithLayout = () => {
   const { ref } = useParams()
@@ -85,7 +86,16 @@ const EdgeFunctionsPage: NextPageWithLayout = () => {
         <PageSectionContent>
           <div className="flex flex-col gap-6">
             {isLoading && <GenericSkeletonLoader />}
-            {isError && <AlertError error={error} subject="Failed to retrieve edge functions" />}
+            {isError &&
+              (IS_PLATFORM ? (
+                <AlertError error={error} subject="Failed to retrieve edge functions" />
+              ) : (
+                <Admonition type="warning" title="Failed to retrieve edge functions">
+                  <p className="prose [&>code]:text-xs text-sm">
+                    Local functions can be found at <code>supabase/functions</code> folder.
+                  </p>
+                </Admonition>
+              ))}
             {isSuccess && (
               <>
                 {hasFunctions ? (
