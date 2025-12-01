@@ -3,12 +3,12 @@ import { useMemo, useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 
 import { useParams } from 'common'
-import { useIsNewStorageUIEnabled } from 'components/interfaces/App/FeaturePreview/FeaturePreviewContext'
+import { useApiKeysVisibility } from 'components/interfaces/APIKeys/hooks/useApiKeysVisibility'
 import { getCatalogURI } from 'components/interfaces/Storage/StorageSettings/StorageSettings.utils'
 import { InlineLink } from 'components/ui/InlineLink'
 import { getKeys, useAPIKeysQuery } from 'data/api-keys/api-keys-query'
 import { useProjectSettingsV2Query } from 'data/config/project-settings-v2-query'
-import { useBucketsQuery } from 'data/storage/buckets-query'
+import { useAnalyticsBucketsQuery } from 'data/storage/analytics-buckets-query'
 import { useIcebergNamespacesQuery } from 'data/storage/iceberg-namespaces-query'
 import { useStorageCredentialsQuery } from 'data/storage/s3-access-key-query'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
@@ -124,10 +124,13 @@ export const AnalyticsBucketFields = ({
   const [showSecretAccessKey, setShowSecretAccessKey] = useState(false)
 
   const { ref: projectRef } = useParams()
-  const isStorageV2 = useIsNewStorageUIEnabled()
   const { data: project } = useSelectedProjectQuery()
 
-  const { data: apiKeys } = useAPIKeysQuery({ projectRef, reveal: true })
+  const { canReadAPIKeys } = useApiKeysVisibility()
+  const { data: apiKeys } = useAPIKeysQuery(
+    { projectRef, reveal: true },
+    { enabled: canReadAPIKeys }
+  )
   const { serviceKey } = getKeys(apiKeys)
   const serviceApiKey = serviceKey?.api_key ?? ''
 
@@ -146,11 +149,10 @@ export const AnalyticsBucketFields = ({
     !s3Keys.find((k) => k.access_key === s3AccessKeyId)
 
   const {
-    data: buckets = [],
+    data: analyticsBuckets = [],
     isLoading: isLoadingBuckets,
     isError: isErrorBuckets,
-  } = useBucketsQuery({ projectRef })
-  const analyticsBuckets = buckets.filter((bucket) => bucket.type === 'ANALYTICS')
+  } = useAnalyticsBucketsQuery({ projectRef })
 
   // Construct catalog URI for iceberg namespaces query
   const catalogUri = useMemo(() => {
@@ -170,9 +172,9 @@ export const AnalyticsBucketFields = ({
     refetch: refetchNamespaces,
   } = useIcebergNamespacesQuery(
     {
+      projectRef,
       catalogUri,
       warehouse: warehouseName || '',
-      token: serviceApiKey || '',
     },
     {
       enabled: type === 'Analytics Bucket' && !!catalogUri && !!warehouseName && !!serviceApiKey,
@@ -240,7 +242,7 @@ export const AnalyticsBucketFields = ({
                           </SelectItem_Shadcn_>
                         ) : (
                           analyticsBuckets.map((bucket) => (
-                            <SelectItem_Shadcn_ key={bucket.id} value={bucket.name}>
+                            <SelectItem_Shadcn_ key={bucket.name} value={bucket.name}>
                               {bucket.name}
                             </SelectItem_Shadcn_>
                           ))
@@ -447,13 +449,7 @@ export const AnalyticsBucketFields = ({
               <p className="!leading-normal">
                 Please select another key or create a new set, as this destination will not work
                 otherwise. S3 access keys can be managed in your{' '}
-                <InlineLink
-                  href={
-                    isStorageV2
-                      ? `/project/${projectRef}/storage/files/settings`
-                      : `/project/${projectRef}/storage/settings`
-                  }
-                >
+                <InlineLink href={`/project/${projectRef}/storage/files/settings`}>
                   storage settings
                 </InlineLink>
               </p>
@@ -466,13 +462,7 @@ export const AnalyticsBucketFields = ({
             <Admonition type="default" title="A new set of S3 access keys will be created">
               <p className="!leading-normal">
                 S3 access keys can be managed in your{' '}
-                <InlineLink
-                  href={
-                    isStorageV2
-                      ? `/project/${projectRef}/storage/files/settings`
-                      : `/project/${projectRef}/storage/settings`
-                  }
-                >
+                <InlineLink href={`/project/${projectRef}/storage/files/settings`}>
                   storage settings
                 </InlineLink>
                 .
