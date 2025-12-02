@@ -14,7 +14,7 @@ import {
 import { useIsFeatureEnabled } from 'hooks/misc/useIsFeatureEnabled'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
 import { DOCS_URL } from 'lib/constants'
-import { InfoIcon, PopoverContent_Shadcn_, PopoverTrigger_Shadcn_, Popover_Shadcn_, cn } from 'ui'
+import { InfoIcon, PopoverContent, PopoverTrigger, Popover, PopoverSeparator, cn } from 'ui'
 
 const SERVICE_STATUS_THRESHOLD = 5 // minutes
 
@@ -275,8 +275,8 @@ export const ServiceStatus = () => {
   const overallStatusLabel = getOverallStatusLabel()
 
   return (
-    <Popover_Shadcn_>
-      <PopoverTrigger_Shadcn_>
+    <Popover>
+      <PopoverTrigger>
         <SingleStat
           icon={
             showSpinnerIcon ? (
@@ -304,8 +304,8 @@ export const ServiceStatus = () => {
           label={<span>Status</span>}
           value={<span>{overallStatusLabel}</span>}
         />
-      </PopoverTrigger_Shadcn_>
-      <PopoverContent_Shadcn_ portal className="p-0 w-60" side="bottom" align="start">
+      </PopoverTrigger>
+      <PopoverContent portal className="p-0 w-60" side="bottom" align="start">
         {services.map((service) => (
           <Link
             href={`/project/${ref}${service.logsUrl}`}
@@ -359,7 +359,7 @@ export const ServiceStatus = () => {
             </div>
           </div>
         )}
-      </PopoverContent_Shadcn_>
-    </Popover_Shadcn_>
+      </PopoverContent>
+    </Popover>
   )
 }
