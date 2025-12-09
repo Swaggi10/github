@@ -32,6 +32,14 @@ import { TabPanel, Tabs } from '~/features/ui/Tabs'
 import { ErrorCodes } from '../ui/ErrorCodes'
 import { McpConfigPanel } from '../ui/McpConfigPanel'
 
+// UI Library
+import { RegistryBlock } from 'ui-library/components/registry-block';
+import { BlockPreview } from 'ui-library/components/block-preview';
+import { BlockItem } from 'ui-library/components/block-item';
+import { ComponentPreview } from 'ui-library/components/component-preview';
+import { DualRealtimeChat } from 'ui-library/components/dual-realtime-chat'
+
+
 const components = {
   Accordion,
   AccordionItem,
@@ -87,6 +95,12 @@ const components = {
   ),
   pre: CodeBlock,
   Price,
+  // UI Library
+  RegistryBlock,
+  BlockItem,
+  BlockPreview,
+  ComponentPreview,
+  DualRealtimeChat,
 }
 
 export { components }
