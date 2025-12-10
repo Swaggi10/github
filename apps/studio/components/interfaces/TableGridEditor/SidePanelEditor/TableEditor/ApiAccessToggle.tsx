@@ -1,10 +1,15 @@
 import type { PostgresTable } from '@supabase/postgres-meta'
-import { useEffect } from 'react'
+import Link from 'next/link'
+import { useEffect, useMemo } from 'react'
 
+import { useParams } from 'common'
+import { useProjectPostgrestConfigQuery } from 'data/config/project-postgrest-config-query'
 import { useTableApiAccessQuery } from 'data/privileges/table-api-access-query'
 import { useQuerySchemaState } from 'hooks/misc/useSchemaQueryState'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
 import { Switch } from 'ui'
+import { Admonition } from 'ui-patterns'
+import { InfoTooltip } from 'ui-patterns/info-tooltip'
 
 import type { TableField } from './TableEditor.types'
 
@@ -25,12 +30,22 @@ export const ApiAccessToggle = ({
   onChange,
   onInitialLoad,
 }: ApiAccessToggleProps) => {
+  const { ref: projectRef } = useParams()
   const { data: project } = useSelectedProjectQuery()
   const { selectedSchema } = useQuerySchemaState()
 
   const { name: tableName } = tableFields
   const schema = table?.schema ?? selectedSchema
   const relationId = table?.id ?? tableFields.id
+
+  const { data: postgrestConfig } = useProjectPostgrestConfigQuery({ projectRef })
+
+  const exposedSchemas = useMemo(() => {
+    if (!postgrestConfig?.db_schema) return []
+    return postgrestConfig.db_schema.replace(/ /g, '').split(',')
+  }, [postgrestConfig?.db_schema])
+
+  const isSchemaExposed = exposedSchemas.includes(schema)
 
   const { data: apiAccessData, isLoading: isApiAccessLoading } = useTableApiAccessQuery(
     {
@@ -56,22 +71,53 @@ export const ApiAccessToggle = ({
   }, [apiAccessData?.hasApiAccess, onInitialLoad, tableFields.isApiAccessEnabled])
 
   // For new records or duplicating, the query is disabled so we don't need to wait for loading
-  const isDisabled = !isNewRecord && !isDuplicating && isApiAccessLoading
+  const isLoadingState = !isNewRecord && !isDuplicating && isApiAccessLoading
+  const isDisabled = isLoadingState || !isSchemaExposed
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-      <div className="space-y-1">
-        <p className="text-sm text-foreground">Expose table via Data API</p>
-        <p className="text-sm text-foreground-lighter">
-          This table will be accessible via client libraries like supabase-js
-        </p>
+    <div className="space-y-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="space-y-1">
+          <p className="text-sm text-foreground flex items-center gap-1.5">
+            Expose table via Data API
+            <InfoTooltip side="top" className="max-w-80">
+              This controls whether the <code className="text-xs">anon</code> and{' '}
+              <code className="text-xs">authenticated</code> roles have access to this table. When
+              disabled, select privileges are revoked from these roles, making the table
+              inaccessible via the Data API.
+            </InfoTooltip>
+          </p>
+          <p className="text-sm text-foreground-lighter">
+            Disabling will make this table inaccessible via Supabase client libraries like
+            supabase-js
+          </p>
+        </div>
+        <Switch
+          size="large"
+          disabled={isDisabled}
+          checked={isSchemaExposed && derivedApiAccessEnabled}
+          onCheckedChange={(value) => onChange?.(value)}
+        />
       </div>
-      <Switch
-        size="large"
-        disabled={isDisabled}
-        checked={derivedApiAccessEnabled}
-        onCheckedChange={(value) => onChange?.(value)}
-      />
+      {!isSchemaExposed && (
+        <Admonition
+          type="default"
+          title={`The "${schema}" schema is not exposed via the Data API`}
+          description={
+            <>
+              To enable API access for this table, you need to first expose the{' '}
+              <code className="text-xs">{schema}</code> schema in your{' '}
+              <Link
+                href={`/project/${projectRef}/settings/api`}
+                className="text-foreground hover:underline"
+              >
+                API settings
+              </Link>
+              .
+            </>
+          }
+        />
+      )}
     </div>
   )
 }

@@ -19,8 +19,10 @@ import { InlineLink } from 'components/ui/InlineLink'
 import { getTableDefinition } from 'data/database/table-definition-query'
 import { ENTITY_TYPE } from 'data/entity-types/entity-type-constants'
 import { Entity } from 'data/entity-types/entity-types-infinite-query'
+import { useProjectPostgrestConfigQuery } from 'data/config/project-postgrest-config-query'
 import { useProjectLintsQuery } from 'data/lint/lint-query'
 import { EditorTablePageLink } from 'data/prefetchers/project.$ref.editor.$id'
+import { useTableApiAccessQuery } from 'data/privileges/table-api-access-query'
 import { getTableEditor } from 'data/table-editor/table-editor-query'
 import { isTableLike } from 'data/table-editor/table-editor-types'
 import { fetchAllTableRows } from 'data/table-rows/table-rows-query'
@@ -464,6 +466,42 @@ const EntityTooltipTrigger = ({
   foreignTableHasLints: boolean
 }) => {
   const { ref } = useParams()
+  const { data: project } = useSelectedProjectQuery()
+
+  const { data: postgrestConfig } = useProjectPostgrestConfigQuery({ projectRef: ref })
+
+  const exposedSchemas = postgrestConfig?.db_schema
+    ? postgrestConfig.db_schema.replace(/ /g, '').split(',')
+    : []
+  const isSchemaExposed = exposedSchemas.includes(entity.schema)
+
+  const { data: apiAccessData } = useTableApiAccessQuery(
+    {
+      projectRef: project?.ref,
+      connectionString: project?.connectionString,
+      relationId: entity.id,
+      schema: entity.schema,
+      tableName: entity.name,
+    },
+    { enabled: isSchemaExposed }
+  )
+
+  const hasApiAccessDisabled = apiAccessData?.hasApiAccess === false
+
+  // Show API disabled badge only if schema is exposed but table has API access disabled
+  if (isSchemaExposed && hasApiAccessDisabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger className="min-w-4">
+          <Badge variant="default">API disabled</Badge>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-52 text-center">
+          This table is not accessible via the Data API. Enable API access in the table settings to
+          allow client libraries like supabase-js to query this table.
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
 
   let tooltipContent = null
   const accessWarning = 'Data is publicly accessible via API'
