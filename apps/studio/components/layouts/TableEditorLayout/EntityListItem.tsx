@@ -1,4 +1,4 @@
-import { Copy, Download, Edit, Lock, MoreVertical, Trash } from 'lucide-react'
+import { Copy, Download, Edit, Globe, Lock, MoreVertical, Trash } from 'lucide-react'
 import Link from 'next/link'
 import { type CSSProperties } from 'react'
 import { toast } from 'sonner'
@@ -208,15 +208,13 @@ const EntityListItem = ({
           >
             {entity.name}
           </span>
-          <div>
-            <EntityTooltipTrigger
-              entity={entity}
-              tableHasLints={tableHasLints}
-              viewHasLints={viewHasLints}
-              materializedViewHasLints={materializedViewHasLints}
-              foreignTableHasLints={foreignTableHasLints}
-            />
-          </div>
+          <EntityTooltipTrigger
+            entity={entity}
+            tableHasLints={tableHasLints}
+            viewHasLints={viewHasLints}
+            materializedViewHasLints={materializedViewHasLints}
+            foreignTableHasLints={foreignTableHasLints}
+          />
         </div>
 
         {canEdit && (
@@ -411,22 +409,7 @@ const EntityTooltipTrigger = ({
     { enabled: isSchemaExposed }
   )
 
-  const hasApiAccessDisabled = apiAccessData?.hasApiAccess === false
-
-  // Show API disabled badge only if schema is exposed but table has API access disabled
-  if (isSchemaExposed && hasApiAccessDisabled) {
-    return (
-      <Tooltip>
-        <TooltipTrigger className="min-w-4">
-          <Badge variant="default">API disabled</Badge>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-52 text-center">
-          This table is not accessible via the Data API. Enable API access in the table settings to
-          allow client libraries like supabase-js to query this table.
-        </TooltipContent>
-      </Tooltip>
-    )
-  }
+  const hasAnyApiPrivileges = apiAccessData?.hasApiAccess === true
 
   let tooltipContent = null
   const accessWarning = 'Data is publicly accessible via API'
@@ -487,6 +470,20 @@ const EntityTooltipTrigger = ({
         </TooltipTrigger>
         <TooltipContent side="right" className="max-w-52 text-center">
           {tooltipContent}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  // Show API exposed badge only if schema is exposed and table has any API privileges enabled
+  if (isSchemaExposed && hasAnyApiPrivileges) {
+    return (
+      <Tooltip>
+        <TooltipTrigger className="min-w-4">
+          <Globe size={14} strokeWidth={1} className="text-foreground-lighter" />
+        </TooltipTrigger>
+        <TooltipContent side="right" className="max-w-52 text-center">
+          At least one privilege on one role is exposed via the API.
         </TooltipContent>
       </Tooltip>
     )
