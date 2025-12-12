@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 
 import { useParams } from 'common'
+import { type GeneratedPolicy } from 'components/interfaces/Auth/Policies/Policies.utils'
 import { useDatabasePolicyCreateMutation } from 'data/database-policies/database-policy-create-mutation'
 import { databasePoliciesKeys } from 'data/database-policies/keys'
 import { useDatabasePublicationCreateMutation } from 'data/database-publications/database-publications-create-mutation'
@@ -32,6 +33,7 @@ import { getTables } from 'data/tables/tables-query'
 import { useSelectedOrganizationQuery } from 'hooks/misc/useSelectedOrganization'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
 import { useConfirmOnClose, type ConfirmOnCloseModalProps } from 'hooks/ui/useConfirmOnClose'
+import { usePHFlag } from 'hooks/ui/useFlag'
 import { useUrlState } from 'hooks/ui/useUrlState'
 import { useTrack } from 'lib/telemetry/track'
 import { useGetImpersonatedRoleState } from 'state/role-impersonation-state'
@@ -170,6 +172,7 @@ export const SidePanelEditor = ({
   const { data: project } = useSelectedProjectQuery()
   const { data: org } = useSelectedOrganizationQuery()
   const getImpersonatedRoleState = useGetImpersonatedRoleState()
+  const generatePoliciesFlag = usePHFlag<boolean>('tableCreateGeneratePolicies')
 
   const [isEdited, setIsEdited] = useState<boolean>(false)
 
@@ -602,6 +605,17 @@ export const SidePanelEditor = ({
           )
         } else {
           toast.success(`Table ${table.name} is good to go!`, { id: toastId })
+        }
+
+        // Track experiment conversion if user is in the experiment
+        if (generatePoliciesFlag !== undefined) {
+          track('table_create_generate_policies_experiment_converted', {
+            experiment_id: 'tableCreateGeneratePolicies',
+            variant: generatePoliciesFlag ? 'treatment' : 'control',
+            has_rls_enabled: isRLSEnabled,
+            has_rls_policies: generatedPolicies.length > 0,
+            has_generated_policies: generatedPolicies.length > 0,
+          })
         }
 
         onTableCreated(table)
