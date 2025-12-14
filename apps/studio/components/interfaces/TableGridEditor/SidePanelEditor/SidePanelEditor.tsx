@@ -165,6 +165,8 @@ export const SidePanelEditor = ({
   const { data: org } = useSelectedOrganizationQuery()
   const getImpersonatedRoleState = useGetImpersonatedRoleState()
   const generatePoliciesFlag = usePHFlag<boolean>('tableCreateGeneratePolicies')
+  const apiAccessToggleFlag = usePHFlag<boolean>('tableEditorApiAccessToggle')
+  const isApiAccessToggleEnabled = apiAccessToggleFlag === true
 
   const [isEdited, setIsEdited] = useState<boolean>(false)
 
@@ -567,9 +569,11 @@ export const SidePanelEditor = ({
         })
 
         if (isRealtimeEnabled) await updateTableRealtime(table, true)
-        // For new tables, set the selected privileges (default is all if undefined)
-        const privilegesToSet: ApiPrivilegesPerRole = apiPrivileges ?? getDefaultApiPrivileges()
-        await updateTableApiAccess(table, privilegesToSet)
+        if (isApiAccessToggleEnabled) {
+          // For new tables, set the selected privileges (default is all if undefined)
+          const privilegesToSet: ApiPrivilegesPerRole = apiPrivileges ?? getDefaultApiPrivileges()
+          await updateTableApiAccess(table, privilegesToSet)
+        }
 
         // Invalidate queries for table creation
         await Promise.all([
@@ -622,9 +626,12 @@ export const SidePanelEditor = ({
           foreignKeyRelations,
         })
         if (isRealtimeEnabled) await updateTableRealtime(table, isRealtimeEnabled)
-        // For duplicated tables, set the selected privileges (default is all if undefined)
-        const duplicatePrivileges: ApiPrivilegesPerRole = apiPrivileges ?? getDefaultApiPrivileges()
-        await updateTableApiAccess(table, duplicatePrivileges)
+        if (isApiAccessToggleEnabled) {
+          // For duplicated tables, set the selected privileges (default is all if undefined)
+          const duplicatePrivileges: ApiPrivilegesPerRole =
+            apiPrivileges ?? getDefaultApiPrivileges()
+          await updateTableApiAccess(table, duplicatePrivileges)
+        }
 
         await Promise.all([
           queryClient.invalidateQueries({
@@ -659,7 +666,7 @@ export const SidePanelEditor = ({
         }
         if (isTableLike(table)) {
           await updateTableRealtime(table, isRealtimeEnabled)
-          if (apiPrivileges) {
+          if (isApiAccessToggleEnabled && apiPrivileges) {
             await updateTableApiAccess(table, apiPrivileges)
           }
         }
