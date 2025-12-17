@@ -16,6 +16,7 @@ import { RealtimeButtonVariant, useRealtimeExperiment } from 'hooks/misc/useReal
 import { useQuerySchemaState } from 'hooks/misc/useSchemaQueryState'
 import { useSelectedProjectQuery } from 'hooks/misc/useSelectedProject'
 import { useTableCreateGeneratePolicies } from 'hooks/misc/useTableCreateGeneratePolicies'
+import { usePHFlag } from 'hooks/ui/useFlag'
 import { useUrlState } from 'hooks/ui/useUrlState'
 import { useProtectedSchemas } from 'hooks/useProtectedSchemas'
 import { DOCS_URL } from 'lib/constants'
@@ -31,6 +32,7 @@ import { formatForeignKeys } from '../ForeignKeySelector/ForeignKeySelector.util
 import type { SaveTableParams } from '../SidePanelEditor'
 import type { ColumnField } from '../SidePanelEditor.types'
 import { SpreadsheetImport } from '../SpreadsheetImport/SpreadsheetImport'
+import { ApiAccessToggle } from './ApiAccessToggle'
 import ColumnManagement from './ColumnManagement'
 import { ForeignKeysManagement } from './ForeignKeysManagement/ForeignKeysManagement'
 import { HeaderTitle } from './HeaderTitle'
@@ -77,6 +79,8 @@ export const TableEditor = ({
   const tableEditorApi = useContext(TableEditorStateContext)
   const { realtimeAll: realtimeEnabled } = useIsFeatureEnabled(['realtime:all'])
   const { docsRowLevelSecurityGuidePath } = useCustomContent(['docs:row_level_security_guide_path'])
+  const apiAccessToggleFlag = usePHFlag<boolean>('tableEditorApiAccessToggle')
+  const isApiAccessToggleEnabled = apiAccessToggleFlag === true
 
   const [params, setParams] = useUrlState()
   const { data: project } = useSelectedProjectQuery()
@@ -212,6 +216,7 @@ export const TableEditor = ({
           importContent,
           isRLSEnabled: tableFields.isRLSEnabled,
           isRealtimeEnabled: tableFields.isRealtimeEnabled,
+          apiPrivileges: tableFields.apiPrivileges,
           isDuplicateRows: isDuplicateRows,
           existingForeignKeyRelations: foreignKeys,
           primaryKey,
@@ -542,25 +547,34 @@ export const TableEditor = ({
         </>
       )}
 
-      {/* [Joshen] Temporarily hide this section if duplicating, as we aren't duplicating policies atm when duplicating tables */}
-      {/* We should do this thought, but let's do this in another PR as the current one is already quite big */}
-      {generatePoliciesEnabled && !isDuplicating && (
-        <>
-          <SidePanel.Separator />
-          <SidePanel.Content className="space-y-10 py-6">
-            <RLSManagement
-              table={table}
-              tableFields={tableFields}
-              foreignKeyRelations={isNewRecord ? fkRelations : undefined}
-              isNewRecord={isNewRecord}
-              isDuplicating={isDuplicating}
-              generatedPolicies={generatedPolicies}
-              onGeneratedPoliciesChange={setGeneratedPolicies}
-              onRLSUpdate={(value) => onUpdateField({ isRLSEnabled: value })}
-            />
-          </SidePanel.Content>
-        </>
-      )}
+      <SidePanel.Separator />
+      <SidePanel.Content className="py-6 space-y-6">
+        {isApiAccessToggleEnabled && (
+          <ApiAccessToggle
+            table={table}
+            tableFields={tableFields}
+            isNewRecord={isNewRecord}
+            isDuplicating={isDuplicating}
+            onChange={(privileges) => onUpdateField({ apiPrivileges: privileges })}
+            onInitialLoad={(privileges) => onUpdateField({ apiPrivileges: privileges })}
+          />
+        )}
+
+        {/* [Joshen] Temporarily hide this section if duplicating, as we aren't duplicating policies atm when duplicating tables */}
+        {/* We should do this thought, but let's do this in another PR as the current one is already quite big */}
+        {generatePoliciesEnabled && !isDuplicating && (
+          <RLSManagement
+            table={table}
+            tableFields={tableFields}
+            foreignKeyRelations={isNewRecord ? fkRelations : undefined}
+            isNewRecord={isNewRecord}
+            isDuplicating={isDuplicating}
+            generatedPolicies={generatedPolicies}
+            onGeneratedPoliciesChange={setGeneratedPolicies}
+            onRLSUpdate={(value) => onUpdateField({ isRLSEnabled: value })}
+          />
+        )}
+      </SidePanel.Content>
     </SidePanel>
   )
 }
