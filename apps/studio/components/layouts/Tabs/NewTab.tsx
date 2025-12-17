@@ -103,9 +103,7 @@ export function NewTab() {
       : null
 
   const shouldTrackExposure =
-    editor !== 'sql' &&
-    tableQuickstartVariant !== false &&
-    tableQuickstartVariant !== undefined
+    editor !== 'sql' && tableQuickstartVariant !== false && tableQuickstartVariant !== undefined
 
   useEffect(() => {
     if (shouldTrackExposure && !hasTrackedExposure) {
@@ -114,7 +112,13 @@ export function NewTab() {
         variant: tableQuickstartVariant,
       })
     }
-  }, [shouldTrackExposure, hasTrackedExposure, setHasTrackedExposure, tableQuickstartVariant, track])
+  }, [
+    shouldTrackExposure,
+    hasTrackedExposure,
+    setHasTrackedExposure,
+    tableQuickstartVariant,
+    track,
+  ])
 
   const handleOpenAssistant = () => {
     if (isCreatingChat) return
