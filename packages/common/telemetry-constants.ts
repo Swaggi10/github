@@ -2602,6 +2602,24 @@ export interface RequestUpgradeSubmittedEvent {
 }
 
 /**
+ * Triggered when a Studio error UI element is displayed (mounted).
+ * This includes error Admonitions and Toast notifications.
+ *
+ * @group Events
+ * @source studio
+ */
+export interface DashboardErrorDisplayedEvent {
+  action: 'dashboard_error_displayed'
+  properties: {
+    /**
+     * Source of the error
+     */
+    source?: 'admonition' | 'toast'
+  }
+  groups: TelemetryGroups
+}
+
+/**
  * @hidden
  */
 export type TelemetryEvent =
@@ -2746,3 +2764,4 @@ export type TelemetryEvent =
   | QueryPerformanceAIExplanationButtonClickedEvent
   | RequestUpgradeModalOpenedEvent
   | RequestUpgradeSubmittedEvent
+  | DashboardErrorDisplayedEvent

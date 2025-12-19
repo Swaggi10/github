@@ -60,6 +60,7 @@ import { ProfileProvider } from 'lib/profile'
 import { Telemetry } from 'lib/telemetry'
 import type { AppPropsWithLayout } from 'types'
 import { SonnerToaster, TooltipProvider } from 'ui'
+import { ToastErrorTracker } from 'lib/toast-errors'
 
 dayjs.extend(customParseFormat)
 dayjs.extend(utc)
@@ -169,6 +170,7 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout) {
                               <FeaturePreviewModal />
                             </FeaturePreviewContextProvider>
                             <SonnerToaster position="top-right" />
+                            <ToastErrorTracker />
                             <MonacoThemeProvider />
                           </CommandProvider>
                         </AppBannerContextProvider>
